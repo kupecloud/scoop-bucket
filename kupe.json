@@ -1,0 +1,22 @@
+{
+    "version": "1.1.0",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/kupecloud/kupe-cli/releases/download/v1.1.0/kupe_1.1.0_windows_amd64.zip",
+            "bin": [
+                "kupe.exe"
+            ],
+            "hash": "224f51d37c907eb600aaeeb006cd02ac7ed7ab4d0043b2558e2559e7a2e48efb"
+        },
+        "arm64": {
+            "url": "https://github.com/kupecloud/kupe-cli/releases/download/v1.1.0/kupe_1.1.0_windows_arm64.zip",
+            "bin": [
+                "kupe.exe"
+            ],
+            "hash": "f04808a518b183fbb9d19b962feaae941662a9a69e4949035227c82301422607"
+        }
+    },
+    "homepage": "https://kupe.cloud",
+    "license": "Apache-2.0",
+    "description": "Official CLI for Kupe managed Kubernetes clusters"
+}
