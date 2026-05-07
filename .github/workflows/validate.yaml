@@ -1,0 +1,58 @@
+name: Validate
+
+# Runs on every push and PR to catch malformed manifests. Typically these
+# come from goreleaser bugs or hand-edits (don't hand-edit). The checks
+# are fast: JSON syntax + Scoop manifest schema.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-manifests:
+    name: JSON syntax + Scoop schema
+    runs-on: ubuntu-latest
+    # Skip when there are no manifests yet (initial seed commit).
+    if: ${{ hashFiles('bucket/*.json') != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Validate JSON syntax
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          fail=0
+          for f in bucket/*.json; do
+            if ! jq empty "$f"; then
+              echo "::error file=$f::invalid JSON"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Validate against Scoop manifest schema
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          # Pin the schema to a known commit so a future schema change
+          # doesn't break our CI without a manual bump.
+          curl -fsSL -o /tmp/scoop-schema.json \
+            'https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json'
+          npm install --silent --no-save ajv-cli@5.0.0
+          fail=0
+          for f in bucket/*.json; do
+            if ! npx ajv validate -s /tmp/scoop-schema.json -d "$f" --strict=false; then
+              echo "::error file=$f::manifest fails Scoop schema"
+              fail=1
+            fi
+          done
+          exit $fail
