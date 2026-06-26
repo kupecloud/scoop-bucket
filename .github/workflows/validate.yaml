@@ -41,9 +41,15 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
+          # Pin the schema to an immutable Scoop release commit (v0.5.3) rather
+          # than the moving `master` ref so validation behavior can't change
+          # silently under us. Bump deliberately when intentionally updating.
           curl -fsSL -o /tmp/scoop-schema.json \
-            'https://raw.githubusercontent.com/ScoopInstaller/Scoop/master/schema.json'
-          npm install --silent --no-save ajv-cli@5.0.0
+            'https://raw.githubusercontent.com/ScoopInstaller/Scoop/b588a06e41d920d2123ec70aee682bae14935939/schema.json'
+          # Pin ajv-cli (and its resolved tree) to an exact version. --no-save
+          # keeps package.json/package-lock.json out of the repo root so they
+          # don't get picked up by the `*.json` manifest loops below.
+          npm install --silent --no-save --save-exact ajv-cli@5.0.0
           fail=0
           for f in *.json; do
             if ! npx ajv validate -s /tmp/scoop-schema.json -d "$f" --strict=false; then
