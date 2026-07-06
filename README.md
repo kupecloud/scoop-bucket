@@ -33,11 +33,14 @@ Each release's `checksums.txt` is signed with [Cosign](https://github.com/sigsto
 $TAG = "v0.1.0"   # replace with the release you installed
 gh release download $TAG -R kupecloud/kupe-cli -p '*checksums.txt*'
 cosign verify-blob `
+  --certificate "kupe_$($TAG.TrimStart('v'))_checksums.txt.pem" `
   --certificate-identity-regexp 'https://github.com/kupecloud/kupe-cli/.+' `
   --certificate-oidc-issuer https://token.actions.githubusercontent.com `
   --signature "kupe_$($TAG.TrimStart('v'))_checksums.txt.sig" `
   "kupe_$($TAG.TrimStart('v'))_checksums.txt"
 ```
+
+> **Note:** the `.pem` signing certificate is only attached to releases newer than v1.8.1. Earlier releases do not ship the certificate asset and cannot be keyless-verified with this procedure.
 
 ## License
 
