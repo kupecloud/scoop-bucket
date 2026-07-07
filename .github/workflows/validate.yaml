@@ -58,3 +58,56 @@ jobs:
             fi
           done
           exit $fail
+
+      - name: Verify manifest url/hash against the release checksums
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          # A schema-valid manifest can still point at a 404ing asset or carry a
+          # hash that doesn't match the published zip (goreleaser re-run after a
+          # retag, a partial release where the bucket commit landed but the upload
+          # didn't, a hand-edit). Scoop hard-fails the install on a hash mismatch,
+          # so gate on it here: for every architecture, cross-check the manifest
+          # hash against the release's checksums.txt and confirm the url is live.
+          fail=0
+          for f in *.json; do
+            version="$(jq -r '.version' "$f")"
+            if [[ -z "$version" || "$version" == "null" ]]; then
+              echo "::error file=$f::manifest has no version"
+              fail=1
+              continue
+            fi
+            checksums=""
+            checksums_url=""
+            while IFS=$'\t' read -r arch url hash; do
+              [[ -z "${arch:-}" ]] && continue
+              # checksums.txt sits alongside the zips in the same release dir.
+              if [[ -z "$checksums_url" ]]; then
+                checksums_url="${url%/*}/kupe_${version}_checksums.txt"
+                echo "Fetching $checksums_url"
+                if ! checksums="$(curl -fsSL "$checksums_url")"; then
+                  echo "::error file=$f::cannot download $checksums_url"
+                  fail=1
+                  break
+                fi
+              fi
+              filename="${url##*/}"
+              expected="$(printf '%s\n' "$checksums" | awk -v n="$filename" '{name=$2; sub(/^\*/,"",name); if (name==n) print $1}')"
+              if [[ -z "$expected" ]]; then
+                echo "::error file=$f::$filename not listed in checksums.txt"
+                fail=1
+                continue
+              fi
+              exp_lc="$(printf '%s' "$expected" | tr '[:upper:]' '[:lower:]')"
+              hash_lc="$(printf '%s' "$hash" | tr '[:upper:]' '[:lower:]')"
+              if [[ "$exp_lc" != "$hash_lc" ]]; then
+                echo "::error file=$f::hash mismatch for $filename ($arch): manifest=$hash checksums=$expected"
+                fail=1
+              fi
+              if ! curl -fsIL -o /dev/null "$url"; then
+                echo "::error file=$f::asset not reachable (non-200): $url"
+                fail=1
+              fi
+            done < <(jq -r '.architecture | to_entries[] | [.key, .value.url, .value.hash] | @tsv' "$f")
+          done
+          exit $fail
