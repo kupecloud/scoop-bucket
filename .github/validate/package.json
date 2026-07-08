@@ -1,0 +1,9 @@
+{
+  "name": "scoop-bucket-validate",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pinned toolchain for the Validate workflow's Scoop manifest schema check.",
+  "dependencies": {
+    "ajv-cli": "5.0.0"
+  }
+}

@@ -46,13 +46,16 @@ jobs:
           # silently under us. Bump deliberately when intentionally updating.
           curl -fsSL -o /tmp/scoop-schema.json \
             'https://raw.githubusercontent.com/ScoopInstaller/Scoop/b588a06e41d920d2123ec70aee682bae14935939/schema.json'
-          # Pin ajv-cli (and its resolved tree) to an exact version. --no-save
-          # keeps package.json/package-lock.json out of the repo root so they
-          # don't get picked up by the `*.json` manifest loops below.
-          npm install --silent --no-save --save-exact ajv-cli@5.0.0
+          # Install ajv-cli and its full transitive tree from the committed
+          # lockfile so validation behaviour is reproducible run-to-run: npm ci
+          # fails if package.json and package-lock.json disagree, so nothing in
+          # the tree can float. The toolchain lives under .github/validate/ to
+          # keep its package*.json out of the `*.json` manifest loops below.
+          npm ci --prefix .github/validate
+          ajv=.github/validate/node_modules/.bin/ajv
           fail=0
           for f in *.json; do
-            if ! npx ajv validate -s /tmp/scoop-schema.json -d "$f" --strict=false; then
+            if ! "$ajv" validate -s /tmp/scoop-schema.json -d "$f" --strict=false; then
               echo "::error file=$f::manifest fails Scoop schema"
               fail=1
             fi
