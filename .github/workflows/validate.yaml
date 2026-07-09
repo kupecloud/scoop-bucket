@@ -80,6 +80,20 @@ jobs:
               fail=1
               continue
             fi
+            # A jq failure inside `<(...)` does NOT trip `set -euo pipefail`:
+            # the process substitution's exit status is invisible to the parent
+            # shell. So a manifest with a null/absent `.architecture` makes jq
+            # error, the loop reads zero lines, and the manifest passes with NO
+            # url/hash checked -- a silent fail-open in the integrity gate.
+            # Pre-extract the tuples via command substitution (whose failure
+            # `set -e` DOES catch) and require at least one, so a manifest with
+            # nothing verifiable fails closed. `jq -e` exits non-zero when
+            # `.architecture` is absent/null/empty.
+            if ! arch_tuples="$(jq -er '.architecture | to_entries[] | [.key, .value.url, .value.hash] | @tsv' "$f")" || [[ -z "$arch_tuples" ]]; then
+              echo "::error file=$f::no verifiable architecture url/hash (missing/empty .architecture)"
+              fail=1
+              continue
+            fi
             checksums=""
             checksums_url=""
             while IFS=$'\t' read -r arch url hash; do
@@ -111,6 +125,6 @@ jobs:
                 echo "::error file=$f::asset not reachable (non-200): $url"
                 fail=1
               fi
-            done < <(jq -r '.architecture | to_entries[] | [.key, .value.url, .value.hash] | @tsv' "$f")
+            done <<< "$arch_tuples"
           done
           exit $fail
