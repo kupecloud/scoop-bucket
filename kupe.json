@@ -1,19 +1,19 @@
 {
-    "version": "1.14.1",
+    "version": "1.14.2",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/kupecloud/kupe-cli/releases/download/v1.14.1/kupe_1.14.1_windows_amd64.zip",
+            "url": "https://github.com/kupecloud/kupe-cli/releases/download/v1.14.2/kupe_1.14.2_windows_amd64.zip",
             "bin": [
                 "kupe.exe"
             ],
-            "hash": "0114adf05f9fe0fb64f212da97851d4cd6f63845f8fa5d341bfcfd2215d12a8f"
+            "hash": "dd56565effbf7487e76ffc6e6d5b176b26b09baf5d5facf9541a31e8ce5e7b6a"
         },
         "arm64": {
-            "url": "https://github.com/kupecloud/kupe-cli/releases/download/v1.14.1/kupe_1.14.1_windows_arm64.zip",
+            "url": "https://github.com/kupecloud/kupe-cli/releases/download/v1.14.2/kupe_1.14.2_windows_arm64.zip",
             "bin": [
                 "kupe.exe"
             ],
-            "hash": "9b5a6820a8645eda54f39073e0397c37566899803dbfc0671cc1ba313a612c4c"
+            "hash": "cd7133b193c26fc6dac6238da5c27b870be2ed8260e311945e5fe637cdbc3eb2"
         }
     },
     "homepage": "https://kupe.cloud",
